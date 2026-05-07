@@ -56,7 +56,6 @@ func main() {
 	}
 
 	time.Sleep(1 * time.Second)
-	debouncer.Stop()
 
 	fmt.Printf("executions: %d\n", executions)
 }

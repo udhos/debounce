@@ -43,26 +43,6 @@ func TestDebouncer_Throttling(t *testing.T) {
 	}
 }
 
-func TestDebouncer_Stop(t *testing.T) {
-	delay := 100 * time.Millisecond
-	d := New(delay)
-
-	var calls atomic.Int32
-
-	d.Run(func() {
-		calls.Add(1)
-	})
-
-	// Stop it before it can execute
-	d.Stop()
-
-	time.Sleep(delay + 50*time.Millisecond)
-
-	if c := calls.Load(); c != 0 {
-		t.Errorf("expected 0 calls because it was stopped, got %d", c)
-	}
-}
-
 func TestDebouncer_ContinuousUpdates(t *testing.T) {
 	delay := 100 * time.Millisecond
 	d := New(delay)

@@ -43,12 +43,3 @@ func (d *Debouncer) Run(f func()) {
 		f()
 	})
 }
-
-// Stop stops the debouncer.
-func (d *Debouncer) Stop() {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-	if d.timer != nil {
-		d.timer.Stop()
-	}
-}

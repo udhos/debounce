@@ -52,7 +52,7 @@ func run(calls int, concurrent bool) {
 		}
 	}
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(200 * time.Millisecond)
 
 	expected := 2
 	if calls == 1 {
@@ -66,6 +66,24 @@ func run(calls int, concurrent bool) {
 		label = "sequential"
 	}
 
-	fmt.Printf("%s: executions: %d (expected %d)\n", label, executions, expected)
-	fmt.Printf("%s: index: %d (expected random value between 0 and %d)\n", label, index, calls-1)
+	fmt.Printf("%s: executions: %d (expected %d) [%s]\n",
+		label, executions, expected,
+		evaluateResult(executions, expected, expected))
+
+	indexMax := calls - 1
+
+	if concurrent {
+		fmt.Printf("%s: index: %d (expected random value between 0 and %d) [%s]\n",
+			label, index, indexMax, evaluateResult(index, 0, indexMax))
+	} else {
+		fmt.Printf("%s: index: %d (expected %d) [%s]\n",
+			label, index, indexMax, evaluateResult(index, indexMax, indexMax))
+	}
+}
+
+func evaluateResult(value, low, high int) string {
+	if value >= low && value <= high {
+		return "PASS"
+	}
+	return "FAIL"
 }

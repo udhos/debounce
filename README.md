@@ -6,13 +6,13 @@
 
 [debounce](https://github.com/udhos/debounce) is a simple implementation of a debouncer.
 
-The debouncer coalesces multiple function calls into a single function call.
+The debouncer coalesces multiple function calls.
 
-The first function call will schedule the function to be called after the delay.
+The first function call is executed immediately, and a delay window is started.
 
 Subsequent function calls within the delay window will not reset the timer, but will update the function to be executed.
 
-After the original delay has passed, only the most recently provided function will be executed.
+After the delay has passed, only the most recently provided function will be executed, returning the debouncer to its initial state.
 
 The debouncer is thread-safe, and can be used in concurrent environments. But it is often useful in sequential non-concurrent code as well.
 

@@ -19,27 +19,34 @@ func TestDebouncer_Throttling(t *testing.T) {
 		})
 	}
 
-	// At this point, no calls should have executed yet because of the delay
-	if c := calls.Load(); c != 0 {
-		t.Errorf("expected 0 calls immediately, got %d", c)
+	// The first call executes immediately.
+	// The subsequent 9 calls are coalesced and will execute after the delay.
+	if c := calls.Load(); c != 1 {
+		t.Errorf("expected 1 call immediately, got %d", c)
 	}
 
 	// Wait for the delay to pass
 	time.Sleep(delay + 50*time.Millisecond)
 
-	// We should only have exactly 1 call executed
-	if c := calls.Load(); c != 1 {
-		t.Errorf("expected exactly 1 call after delay, got %d", c)
+	// We should have exactly 2 calls executed (1 immediate, 1 delayed)
+	if c := calls.Load(); c != 2 {
+		t.Errorf("expected exactly 2 calls after delay, got %d", c)
 	}
 
-	// If we run again after the window, it should execute exactly 1 more time
+	// If we run again after the window, it should execute immediately!
 	d.Run(func() {
 		calls.Add(1)
 	})
+
+	if c := calls.Load(); c != 3 {
+		t.Errorf("expected exactly 3 calls immediately after new run, got %d", c)
+	}
+
 	time.Sleep(delay + 50*time.Millisecond)
 
-	if c := calls.Load(); c != 2 {
-		t.Errorf("expected exactly 2 calls total, got %d", c)
+	// Still 3, because no subsequent calls were made during the window
+	if c := calls.Load(); c != 3 {
+		t.Errorf("expected exactly 3 calls total, got %d", c)
 	}
 }
 
@@ -66,10 +73,15 @@ func TestDebouncer_ContinuousUpdates(t *testing.T) {
 
 	// A pure debounce would never fire (0 calls) because 20ms < 100ms delay.
 	// No debouncing would fire 17 times.
-	// Since we are throttling, we expect it to fire at intervals (approximately at 100ms, 200ms, 300ms, 400ms).
+	// With immediate-first throttling (without cooldown), we expect it to fire twice per interval:
+	// T=0 (immediate), T=100 (delayed)
+	// T=100 (immediate), T=200 (delayed)
+	// T=200 (immediate), T=300 (delayed)
+	// T=300 (immediate), T=400 (delayed)
+	// Total expected: ~7-8 calls.
 	c := calls.Load()
-	if c < 3 || c > 5 {
-		t.Errorf("expected between 3 and 5 calls for continuous updates, got %d", c)
+	if c < 6 || c > 9 {
+		t.Errorf("expected between 6 and 9 calls for continuous updates, got %d", c)
 	}
 }
 
@@ -95,12 +107,21 @@ func TestDebouncer_LastFunctionCalled(t *testing.T) {
 		callCount.Add(1)
 	})
 
-	time.Sleep(delay + 50*time.Millisecond)
-
-	if val := lastCalled.Load(); val != 3 {
-		t.Errorf("expected exactly the last function to be called (value 3), got %d", val)
+	// Immediate execution should have happened for the first call
+	if val := lastCalled.Load(); val != 1 {
+		t.Errorf("expected exactly the first function to be called immediately (value 1), got %d", val)
 	}
 	if count := callCount.Load(); count != 1 {
-		t.Errorf("expected exactly 1 function to be executed, got %d", count)
+		t.Errorf("expected exactly 1 function to be executed immediately, got %d", count)
+	}
+
+	time.Sleep(delay + 50*time.Millisecond)
+
+	// After delay, the last function (3) should have been called
+	if val := lastCalled.Load(); val != 3 {
+		t.Errorf("expected exactly the last function to be called after delay (value 3), got %d", val)
+	}
+	if count := callCount.Load(); count != 2 {
+		t.Errorf("expected exactly 2 functions to be executed total, got %d", count)
 	}
 }

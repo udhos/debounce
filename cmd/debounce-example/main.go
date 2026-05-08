@@ -23,47 +23,33 @@ func main() {
 	fmt.Printf("Making %d calls to the debouncer (set with -calls <number>)\n", calls)
 	fmt.Println()
 
-	sequential(calls)
-	concurrent(calls)
+	run(calls, false)
+
+	fmt.Println()
+
+	run(calls, true)
 }
 
-func sequential(calls int) {
+func run(calls int, concurrent bool) {
 	debouncer := debounce.New(100 * time.Millisecond)
 
 	var executions int
 	var index int
 
 	for i := range calls {
-		debouncer.Run(func() {
-			executions++
-			index = i
-		})
-	}
-
-	time.Sleep(1 * time.Second)
-
-	expected := 2
-	if calls == 1 {
-		expected = 1
-	}
-
-	fmt.Printf("sequential: executions: %d (expected %d)\n", executions, expected)
-	fmt.Printf("sequential: index: %d (expected %d)\n", index, calls-1)
-}
-
-func concurrent(calls int) {
-	debouncer := debounce.New(100 * time.Millisecond)
-
-	var executions int
-	var index int
-
-	for i := range calls {
-		go func(i int) {
+		if concurrent {
+			go func(i int) {
+				debouncer.Run(func() {
+					executions++
+					index = i
+				})
+			}(i)
+		} else {
 			debouncer.Run(func() {
 				executions++
 				index = i
 			})
-		}(i)
+		}
 	}
 
 	time.Sleep(1 * time.Second)
@@ -73,6 +59,13 @@ func concurrent(calls int) {
 		expected = 1
 	}
 
-	fmt.Printf("concurrent: executions: %d (expected %d)\n", executions, expected)
-	fmt.Printf("concurrent: index: %d (expected random value between 0 and %d)\n", index, calls-1)
+	var label string
+	if concurrent {
+		label = "concurrent"
+	} else {
+		label = "sequential"
+	}
+
+	fmt.Printf("%s: executions: %d (expected %d)\n", label, executions, expected)
+	fmt.Printf("%s: index: %d (expected random value between 0 and %d)\n", label, index, calls-1)
 }

@@ -24,13 +24,9 @@ In the example below, we create a debouncer with a delay of 100 milliseconds.
 
 We then run the function 100 times in a loop.
 
-Since all calls happen within the delay window, the function will only be executed once.
-
-Thus the output will be:
-
-```bash
-executions: 1
-```
+Since all calls happen within the delay window, the function will be executed twice:
+- The first call will execute immediately.
+- The second call will be the most recent function provided, and will be executed after the delay has passed.
 
 ```go
 package main
@@ -60,3 +56,13 @@ func main() {
 	fmt.Printf("executions: %d\n", executions)
 }
 ```
+
+Thus the output will be:
+
+```bash
+executions: 2
+```
+
+# Example
+
+See a full example in [cmd/debounce-example/main.go](cmd/debounce-example/main.go).
